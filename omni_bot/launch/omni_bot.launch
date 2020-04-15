@@ -1,0 +1,4 @@
+<launch>
+  <node name="driver" pkg="omni_bot" type="driver_node" />
+  <node name="talker" pkg="omni_bot" type="sensor.py" />
+</launch>
