@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import Int16
+import math as m
+
+R = 0.12 # Length from Wheel to Center Point (m)
+r = 0.04 # Wheel's Radius (m)
+
+Theta_d = 30 #in Degree
+Theta = m.radians(Theta_d)
+
+#input
+x
+y
+degree
+a1_d = 0 #degree
+a2_d = 120 #degree
+a3_d = 240
+
+a1 = m.radians(a1_d)
+a2 = m.radians(a2_d)
+a3 = m.radians(a3_d)
+
+v1 = ((-m.sin(Theta)*m.cos(Theta)*x) + (m.sqrt(m.cos(Theta))*y) + R*degree)/ r
+v2 = ((-m.sin(Theta+a2)*m.cos(Theta)*x) + (m.cos(Theta+a2)*m.cos(Theta)*y)+ R*degree)/ r
+v3 = ((-m.sin(Theta+a3)*m.cos(Theta)*x) + (m.cos(Theta+a3)*m.cos(Theta)*y)+ R*degree)/ r
+
+def talker():
+    pub = rospy.Publisher('value1', Int16, queue_size=10)
+    pub2 = rospy.Publisher('value2', Int16, queue_size=10)
+    pub3 = rospy.Publisher('value3', Int16, queue_size=10)
+    rospy.init_node('inverse', anonymous=True)
+    rate = rospy.Rate(10) # 10hz
+    while not rospy.is_shutdown():
+ 	v1 = ((-m.sin(Theta)*m.cos(Theta)*x) + (m.sqrt(m.cos(Theta))*y) + R*degree)/ r
+	v2 = ((-m.sin(Theta+a2)*m.cos(Theta)*x) + (m.cos(Theta+a2)*m.cos(Theta)*y)+ R*degree)/ r
+	v3 = ((-m.sin(Theta+a3)*m.cos(Theta)*x) + (m.cos(Theta+a3)*m.cos(Theta)*y)+ R*degree)/ r
+        rospy.loginfo(v1,v2,v3)
+        pub.publish(v1)
+	pub2.publish(v2)
+	pub3.publish(v3)
+        rate.sleep()
+
+if __name__ == '__main__':
+    try:
+        talker()
+    except rospy.ROSInterruptException:
+        pass
+
