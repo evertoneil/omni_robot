@@ -9,11 +9,11 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 # Set variables for the GPIO motor pins
-Motor1_forwards = 1
-Motor1_backwards = 2
-Motor2_forwards = 3
-Motor2_backwards = 4
-Motor3_forwards = 5
+Motor1_forwards = 21
+Motor1_backwards = 26
+Motor2_forwards = 16
+Motor2_backwards = 12
+Motor3_forwards = 13
 Motor3_backwards = 6
 enable1 = 18
 enable2 = 19
