@@ -1,4 +1,5 @@
 <launch>
   <node name="driver" pkg="omni_bot" type="driver_node" />
   <node name="talker" pkg="omni_bot" type="sensor.py" />
+  <node name="inverse" pkg="omni_bot" type="inverse.py" />
 </launch>
