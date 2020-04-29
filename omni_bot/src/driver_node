@@ -9,19 +9,22 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 # Set variables for the GPIO motor pins
-Motor1_forwards = 20 #fix
-Motor1_backwards = 21 #fix
-Motor2_forwards = 13 #fix
-Motor2_backwards = 19 #fix
-Motor3_forwards = 23 #fix
-Motor3_backwards = 24 #fix
-enable1 = 16 #fix
-enable2 = 26 #fix
-enable3 = 18 #fix
+Motor1_forwards = 13 #fix motor 1
+Motor1_backwards = 19 #fix motor 1
+Motor2_forwards = 23 #fix motor 2
+Motor2_backwards = 24 #fix motor 2
+Motor3_forwards = 20 #fix motor 3
+Motor3_backwards = 21 #fix motor 3
+enable1 = 26 #fix
+enable2 = 18 #fix
+enable3 = 16 #fix
+
 # How many times to turn the pin on and off each second
 Frequency = 20
 # How long the pin stays on each cycle, as a percent
-DutyCycle = 80
+DutyCycle1 = 20
+DutyCycle2 = 20
+DutyCycle3 = 20
 # Setting the duty cycle to 0 means the motors will not turn
 Stop = 0
 
@@ -63,30 +66,6 @@ def StopMotors():
     pwmMotor1.ChangeDutyCycle(Stop)
     pwmMotor2.ChangeDutyCycle(Stop)
     pwmMotor3.ChangeDutyCycle(Stop)
-
-# Turn 3 motors forwards
-def Forwards():
-    GPIO.output(Motor1_forwards,1)
-    GPIO.output(Motor1_backwards,0)
-    GPIO.output(Motor2_forwards,1)
-    GPIO.output(Motor3_backwards,0)
-    GPIO.output(Motor1_forwards,1)
-    GPIO.output(Motor1_backwards,0)
-    pwmMotor1.ChangeDutyCycle(DutyCycle)
-    pwmMotor2.ChangeDutyCycle(DutyCycle)
-    pwmMotor3.ChangeDutyCycle(DutyCycle)
-
-# Turn 3 motors backwards
-def Backwards():
-    GPIO.output(Motor1_forwards,0)
-    GPIO.output(Motor1_backwards,1)
-    GPIO.output(Motor2_forwards,0)
-    GPIO.output(Motor3_backwards,1)
-    GPIO.output(Motor1_forwards,0)
-    GPIO.output(Motor1_backwards,1)
-    pwmMotor1.ChangeDutyCycle(DutyCycle)
-    pwmMotor2.ChangeDutyCycle(DutyCycle)
-    pwmMotor3.ChangeDutyCycle(DutyCycle)
 
 # Message handler
 def CommandCallback(commandMessage):

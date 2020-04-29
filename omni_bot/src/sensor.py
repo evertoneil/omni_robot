@@ -16,8 +16,8 @@ def analogInput(channel):
   return data
 
 def talker():
-    pub = rospy.Publisher('command', Int16, queue_size=10)
-    rospy.init_node('talker', anonymous=True)
+    pub = rospy.Publisher('distance', Int16, queue_size=10)
+    rospy.init_node('sensor', anonymous=True)
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
  	output = analogInput(0) # Reading from CH0
