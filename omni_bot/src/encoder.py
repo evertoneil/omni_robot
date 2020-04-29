@@ -9,12 +9,12 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 # Set variables for the GPIO motor pins
-motor1_encodera = 23
-motor1_encoderb = 24
-motor2_encodera = 25
-motor2_encoderb = 22
-motor3_encodera = 17
-motor3_encoderb = 27
+motor1_encodera = 5
+motor1_encoderb = 6
+motor2_encodera = 17
+motor2_encoderb = 27
+motor3_encodera = 22
+motor3_encoderb = 25
 
 GPIO.setup(motor1_encodera,GPIO.IN)
 GPIO.setup(motor1_encoderb,GPIO.IN)
