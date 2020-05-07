@@ -15,7 +15,8 @@ import cv2
 # Flip the image by setting the flip_method (most common values: 0 and 2)
 # display_width and display_height determine the size of the window on the screen
 
-
+x = 0
+y = 15
 def gstreamer_pipeline(
     capture_width=3240,
     capture_height=2464,
@@ -58,7 +59,7 @@ def face_detect():
 	    edged = cv2.Canny(gray, 50, 110)
 	    edged = cv2.dilate(edged, None, iterations=1)
 	    edged = cv2.erode(edged, None, iterations=1)
-# find contours in the edge map
+	    # find contours in the edge map
 	    #cnts, hierarchy = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	    cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
 		   cv2.CHAIN_APPROX_SIMPLE)	
@@ -128,25 +129,22 @@ def face_detect():
         cv2.destroyAllWindows()
     else:
         print("Unable to open camera")
-"""
+
 def talker():
     pub = rospy.Publisher('camera',object,queue_size=10)
     rospy.init_node('jetson', anonymous=True)
     rate = rospy.Rate(10) # 10hz
     size = object()
-    size.width = dimA
-    size.height = dimB
-    
+    size.width = x
+    size.height = y
     while not rospy.is_shutdown():
- 	rospy.loginfo(size)
+ 	#face_detect()
+	rospy.loginfo(size)
         pub.publish(size)
         rate.sleep()
-"""
-if __name__ == "__main__":
-    face_detect()
 
-"""if __name__ == '__main__':
+if __name__ == '__main__':
     try:
         talker()
     except rospy.ROSInterruptException:
-        pass"""
+        pass
