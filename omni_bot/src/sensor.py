@@ -4,7 +4,7 @@ from numpy import interp    # To scale values
 from time import sleep  # To add delay
 import RPi.GPIO as GPIO # To use GPIO pins
 import rospy
-from std_msgs.msg import Int16
+from std_msgs.msg import Float32
 
 spi = spidev.SpiDev() # Created an object
 spi.open(0,0)
@@ -16,14 +16,17 @@ def analogInput(channel):
   return data
 
 def talker():
-    pub = rospy.Publisher('distance', Int16, queue_size=10)
+    pub = rospy.Publisher('distance', Float32, queue_size=10)
     rospy.init_node('sensor', anonymous=True)
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
  	output = analogInput(0) # Reading from CH0
-    	output = interp(output, [0, 1023], [0, 100])
-        rospy.loginfo(output)
-        pub.publish(output)
+	cm = pow(4027.4/output,1.2134)
+    	#cm = pow(3027.4/output,1.2)
+	if cm > 80:
+		cm = 80
+        rospy.loginfo(cm)
+	pub.publish(cm)
         rate.sleep()
 
 if __name__ == '__main__':

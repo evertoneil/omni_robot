@@ -2,7 +2,7 @@
 
 import rospy
 import RPi.GPIO as GPIO
-from omni_bot.msg import jarak
+from omni_bot.msg import counter
 
 # Set the GPIO modes
 GPIO.setmode(GPIO.BCM)
@@ -10,12 +10,12 @@ GPIO.setwarnings(False)
 
 # Set variables for the GPIO motor pins
 #=========================================
-motor1_encodera = 22
-motor1_encoderb = 25
-motor2_encodera = 5
-motor2_encoderb = 6
-motor3_encodera = 17
-motor3_encoderb = 27
+motor1_encodera = 5
+motor1_encoderb = 6 
+motor2_encodera = 27 
+motor2_encoderb = 17 
+motor3_encodera = 25
+motor3_encoderb = 22
 
 GPIO.setup(motor1_encodera,GPIO.IN)
 GPIO.setup(motor1_encoderb,GPIO.IN)
@@ -34,6 +34,7 @@ counter3 = 0
 rotation3 = 0
 rotation2 = 0
 rotation1 = 0
+count = counter()
 
 #=================================================
 def Encode1(): #fix
@@ -46,7 +47,7 @@ def Encode1(): #fix
     position = (last_AB << 2) | current_AB
     counter1 += outcome[position]
     last_AB = current_AB
-    rotation1 = counter1/60
+    count.enc1 = counter1
 #=================================================
 def Encode2():
     global last_CD
@@ -58,7 +59,7 @@ def Encode2():
     position = (last_CD << 2) | current_CD
     counter2 += outcome[position]
     last_CD = current_CD
-    rotation2 = counter2/60
+    count.enc2 = counter2
 #==================================================
 def Encode3():
     global last_EF
@@ -70,45 +71,20 @@ def Encode3():
     position = (last_EF << 2) | current_EF
     counter3 += outcome[position]
     last_EF = current_EF
-    rotation3 = counter3/60
+    count.enc3 = counter3
 #==============================================
 def talker() :
-    pub = rospy.Publisher('odometry',jarak,queue_size=10)
+    pub = rospy.Publisher('counter',counter,queue_size=10)
     rospy.init_node('encode', anonymous=True)
     rate = rospy.Rate(10) # 10hz
-    value = jarak()
     while not rospy.is_shutdown():
     	Encode3()
-    	#Encode1()
+    	Encode1()
    	Encode2()
-	value.enc3 = rotation3
-	#value.enc1 = rotation1
-	value.enc2 = rotation2
-	pub.publish(value)
-"""
-def talker():
-    pub = rospy.Publisher('odometry',jarak,queue_size=10)
-    rospy.init_node('encode', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown():
-	#Encode1()
-	#Encode2()
-	#Encode3()
-	value = jarak()
-    	value.enc1 = counter1
-    	#value.enc2 = rotation2
-    	#value.enc3 = rotation3
- 	print(value.enc1)
-	#rospy.loginfo(value)
-        pub.publish(value)
-        rate.sleep()
-
-"""
+	pub.publish(count)
+#============================================
 if __name__ == '__main__':
     try:
         talker()
     except rospy.ROSInterruptException:
         pass
-
-
-
