@@ -1,0 +1,320 @@
+#!/usr/bin/env python
+
+import time
+import rospy
+from omni_bot.msg import kecepatan
+from omni_bot.msg import counter
+from omni_bot.msg import putaran
+from omni_bot.msg import rpm_need
+import RPi.GPIO as GPIO
+import pigpio
+
+# Set the GPIO & pigpio modes
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+pi = pigpio.pi()
+
+#=== Set variables for GPIO motor pins==========
+Motor1_forwards = 20
+Motor1_backwards = 16
+Motor2_forwards = 24 
+Motor2_backwards = 23 
+Motor3_forwards = 19 
+Motor3_backwards = 13 
+enable1 = 21
+enable2 = 18 
+enable3 = 26 
+#----------------------------------------
+motor1_encodera = 5
+motor1_encoderb = 6 
+motor2_encodera = 27 
+motor2_encoderb = 17 
+motor3_encodera = 25
+motor3_encoderb = 22
+#=======set variables==========================
+freq = 25	#PWM Frequencies
+DutyCycle1 = 20
+DutyCycle2 = 20
+DutyCycle3 = 20
+Putaran1 = 10
+Putaran2 = 10
+Putaran3 = 10
+Roda1 = 20
+Roda2 = 20
+Roda3 = 30
+Stop = 0
+stat1 = 1
+stat2 = 1
+stat3 = 1
+pwm1 = 0
+pwm2 = 0
+pwm3 = 0
+rpm1 = 0
+rpm2 = 0
+rpm3 = 0
+setpoint1=0
+setpoint2=0
+setpoint3=0
+outcome = [0,1,-1,0,-1,0,0,1,1,0,0,-1,0,-1,1,0]
+last_AB = 0b00
+last_CD = 0b00
+last_EF = 0b00
+counter1 = 0
+counter2 = 0
+counter3 = 0
+#====================================================
+#=====Set the GPIO Pin mode==========================
+GPIO.setup(Motor1_forwards, GPIO.OUT)
+GPIO.setup(Motor1_backwards, GPIO.OUT)
+GPIO.setup(Motor2_forwards, GPIO.OUT)
+GPIO.setup(Motor2_backwards, GPIO.OUT)
+GPIO.setup(Motor3_forwards, GPIO.OUT)
+GPIO.setup(Motor3_backwards, GPIO.OUT)
+GPIO.setup(enable1, GPIO.OUT)
+GPIO.setup(enable2, GPIO.OUT)
+GPIO.setup(enable3, GPIO.OUT)
+#----------------------------------------------------
+GPIO.setup(motor1_encodera,GPIO.IN)
+GPIO.setup(motor1_encoderb,GPIO.IN)
+GPIO.setup(motor2_encodera,GPIO.IN)
+GPIO.setup(motor2_encoderb,GPIO.IN)
+GPIO.setup(motor3_encodera,GPIO.IN)
+GPIO.setup(motor3_encoderb,GPIO.IN)
+#======Initialize motor to Stop=========================
+GPIO.output(Motor1_forwards,GPIO.LOW)
+GPIO.output(Motor1_backwards,GPIO.LOW)
+GPIO.output(Motor2_forwards,GPIO.LOW)
+GPIO.output(Motor2_backwards,GPIO.LOW)
+GPIO.output(Motor3_forwards,GPIO.LOW)
+GPIO.output(Motor3_backwards,GPIO.LOW)
+pi.set_PWM_frequency(enable1,freq)
+pi.set_PWM_frequency(enable2,freq)
+pi.set_PWM_frequency(enable3,freq)
+pi.set_PWM_dutycycle(enable1,0)
+pi.set_PWM_dutycycle(enable2,0)
+pi.set_PWM_dutycycle(enable3,0)
+#=======================================================
+# Turn all motors off
+def StopMotors():
+    GPIO.output(Motor1_forwards,Stop)
+    GPIO.output(Motor1_backwards,Stop)
+    GPIO.output(Motor2_forwards,Stop)
+    GPIO.output(Motor2_backwards,Stop)
+    GPIO.output(Motor3_forwards,Stop)
+    GPIO.output(Motor3_backwards,Stop)
+    pi.set_PWM_dutycycle(enable1,0)
+    pi.set_PWM_dutycycle(enable2,0)
+    pi.set_PWM_dutycycle(enable3,0)
+#==========================================
+def stop1():
+    global stat1
+    GPIO.output(Motor1_forwards,Stop)
+    GPIO.output(Motor1_backwards,Stop)
+    pi.set_PWM_dutycycle(enable1,0)
+    stat1 = 0
+#------------------------------------------------
+def stop2():
+    global stat2
+    GPIO.output(Motor2_forwards,Stop)
+    GPIO.output(Motor2_backwards,Stop)
+    pi.set_PWM_dutycycle(enable2,0)
+    stat2 = 0
+#---------------------------------------------
+def stop3():
+    global stat3
+    GPIO.output(Motor3_forwards,Stop)
+    GPIO.output(Motor3_backwards,Stop)
+    pi.set_PWM_dutycycle(enable3,0)
+    stat3 = 0
+#============================================
+#======== Moving motors =====================
+def motora_forwards(a):
+    GPIO.output(Motor1_forwards,1)
+    GPIO.output(Motor1_backwards,Stop)
+    pi.set_PWM_dutycycle(enable1,abs(a))
+
+def motora_backwards(b):
+    GPIO.output(Motor1_forwards,Stop)
+    GPIO.output(Motor1_backwards,1)
+    pi.set_PWM_dutycycle(enable1,abs(b))
+#=============================================
+def motorb_forwards(c):
+    GPIO.output(Motor2_forwards,1)
+    GPIO.output(Motor2_backwards,Stop)
+    pi.set_PWM_dutycycle(enable2,abs(c))
+
+def motorb_backwards(d):
+    GPIO.output(Motor2_forwards,Stop)
+    GPIO.output(Motor2_backwards,1)
+    pi.set_PWM_dutycycle(enable2,abs(d))
+#=============================================
+def motorc_forwards(e):
+    GPIO.output(Motor3_forwards,1)
+    GPIO.output(Motor3_backwards,Stop)
+    pi.set_PWM_dutycycle(enable3,abs(e))
+
+def motorc_backwards(x):
+    GPIO.output(Motor3_forwards,Stop)
+    GPIO.output(Motor3_backwards,1)
+    pi.set_PWM_dutycycle(enable3,abs(x))
+
+#=============================================
+#==========set motor CW or CCW================
+def calculate_a(x):
+    if x>0:
+	motora_forwards(x)
+    else: 
+	motora_backwards(x)
+
+def calculate_b(x):
+    if x>0:
+	motorb_forwards(x)
+    else: 
+	motorb_backwards(x)
+
+def calculate_c(x):
+    if x>0:
+	motorc_forwards(x)
+    else: 
+	motorc_backwards(x)
+#==================================================
+def Encode1():
+    global last_AB
+    global counter1
+    A = GPIO.input(motor1_encodera)
+    B = GPIO.input(motor1_encoderb)
+    current_AB = (A << 1) | B
+    position = (last_AB << 2) | current_AB
+    counter1 += outcome[position]
+    last_AB = current_AB
+#=================================================
+def Encode2():
+    global last_CD
+    global counter2
+    C = GPIO.input(motor2_encodera)
+    D = GPIO.input(motor2_encoderb)
+    current_CD = (C << 1) | D
+    position = (last_CD << 2) | current_CD
+    counter2 += outcome[position]
+    last_CD = current_CD
+#==================================================
+def Encode3():
+    global last_EF
+    global counter3
+    E = GPIO.input(motor3_encodera)
+    F = GPIO.input(motor3_encoderb)
+    current_EF = (E << 1) | F
+    position = (last_EF << 2) | current_EF
+    counter3 += outcome[position]
+    last_EF = current_EF
+#==================================================
+def first_vel(data):
+    global DutyCycle1,DutyCycle2,DutyCycle3,pwm1,pwm2,pwm3
+    DutyCycle1 = data.v1	#PWM hasil hitung Inverse
+    DutyCycle2 = data.v2
+    DutyCycle3 = data.v3
+    pwm1 = abs(DutyCycle1)	#Simpan angka PWM
+    pwm2 = abs(DutyCycle2)
+    pwm3 = abs(DutyCycle3)
+    calculate_a(DutyCycle1)	#Proses angka PWM untuk jalankan motor
+    calculate_c(DutyCycle3)
+    calculate_b(DutyCycle2)
+
+def rotation_need(data):	#Terima angka putaran dibutuhkan tiap motor
+    global Putaran1,Putaran2,Putaran3
+    Putaran2 = data.deg2
+    Putaran1 = data.deg1
+    Putaran3 = data.deg3
+
+def pulse_now(data):		#Terima angka counter Pulse tiap motor
+    global Roda1,Roda2,Roda3
+    Roda1 = data.enc1
+    Roda2 = data.enc2
+    Roda3 = data.enc3
+	
+def rpm_needed(data):		#Terima angka RPM hasil Inverse
+    global setpoint1,setpoint2,setpoint3
+    setpoint1 = abs(data.mot1)
+    setpoint2 = abs(data.mot2)
+    setpoint3 = abs(data.mot3)
+
+def rotate_once():		#Rotate sekali untuk scanning ada objek dengan sensor IR
+    GPIO.output(Motor1_forwards,1)
+    GPIO.output(Motor1_backwards,Stop)
+    GPIO.output(Motor2_forwards,1)
+    GPIO.output(Motor2_backwards,Stop)
+    GPIO.output(Motor3_forwards,1)
+    GPIO.output(Motor3_backwards,Stop)
+    pi.set_PWM_dutycycle(enable1,75)
+    pi.set_PWM_dutycycle(enable2,75)
+    pi.set_PWM_dutycycle(enable3,75)
+    time.sleep(3)
+#==========================================================
+def listener():			#Main Program
+    error1=0
+    error2=0
+    error3=0
+    global pwm1,pwm2,pwm3,counter1,counter2,counter3,rpm1,rpm2,rpm3
+    rospy.init_node('driver')
+    msg = rospy.wait_for_message('pwm',kecepatan,timeout=None) 	#Terima angka PWM (1x)
+    first_vel(msg)					       	#Continue
+    put = rospy.wait_for_message('putaran',putaran,timeout=None)#Terima Angka Putaran dibutuhkan (1x)
+    rotation_need(put)						#Continue
+    need_rpm = rospy.wait_for_message('rpm_need',rpm_need,timeout=None)	#Terima angka RPM (1x)
+    rpm_needed(need_rpm)					#Continue
+    rospy.Subscriber('counter', counter, pulse_now)		#Terima angka Counter Pulses(Continuosly)
+    start = time.time()						#Assign waktu mulai
+#--------------------------------------------------------------------------------    
+    while not rospy.is_shutdown():
+	dur = time.time()-start 	#Duration waktu (s)
+	Encode1()			#COunter Pulses tiap motor
+	Encode2()
+	Encode3()
+	if abs(counter1)>=3400 or abs(counter2)>=3400 or abs(counter3)>=3400: #setelah 1x rotation,calculate RPM
+        	rpm1 = (abs(counter1)/(3400*dur))*60
+		rpm2 = (abs(counter2)/(3400*dur))*60
+		rpm3 = (abs(counter3)/(3400*dur))*60
+		#--------RESET COUNTER & TIME-----------
+		counter1=0		
+        	counter2=0
+        	counter3=0
+        	start = time.time()
+		#----------Proportional-----------------
+		error1 = (rpm1-abs(setpoint1))*0.2	#Error = RPM skrg - RPM kalkulasi
+		error2 = (rpm2-abs(setpoint2))*0.2	#kp = 0.2
+		error3 = (rpm3-abs(setpoint3))*0.2
+       		pwm1 = pwm1-error1	#Hasil PID ditambahkan ke angka pwm
+        	pwm2 = pwm2-error2
+        	pwm3 = pwm3-error3
+        	a = abs(pwm1)
+		b = abs(pwm2)
+		c = abs(pwm3)
+		if a>180:		#Limit PID
+			a=175
+		if b>180:
+			b=175
+		if c>180:
+			c=175	
+        	print("a"+ str(rpm1))
+		print("b" + str(rpm2))
+		print("c"+ str(rpm3))
+		pi.set_PWM_dutycycle(enable1,a)	#Change Duty Cycle
+        	pi.set_PWM_dutycycle(enable2,b)
+        	pi.set_PWM_dutycycle(enable3,c)
+		#-----------------------------------PID END----------------------
+	#Kalau counter pulse sudah melewati angka putaran tiap motor = stop
+	#----------------------------------
+	if abs(Roda3) >= abs(Putaran3):
+		stop3()
+	if abs(Roda2) >= abs(Putaran2):
+		stop2()
+	if abs(Roda1) >= abs(Putaran1):
+		stop1()
+	if (stat1 == 0) and (stat2 == 0) and (stat3 == 0): #Kalau semua motor sudah stop,
+		#time.sleep(2)	
+		#rotate_once()
+		StopMotors()
+		break
+#=====================================================
+if __name__ == '__main__':
+    listener()
