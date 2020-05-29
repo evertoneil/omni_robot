@@ -1,4 +1,0 @@
-<launch>
-  <node name="encode" pkg="omni_bot" type="encoder.py" />
-  <node name="driver" pkg="omni_bot" type="driver_node" />
-</launch>
