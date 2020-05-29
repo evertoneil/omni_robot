@@ -51,11 +51,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
  add_message_files(
     FILES
-    input_posisi.msg
     counter.msg
     object.msg
     kecepatan.msg
     putaran.msg
+    jarak.msg
+    rpm_need.msg
 #   Message1.msg
 #   Message2.msg
  )
