@@ -6,6 +6,7 @@ from omni_bot.msg import kecepatan
 from omni_bot.msg import counter
 from omni_bot.msg import putaran
 from omni_bot.msg import rpm_need
+from omni_bot.msg import jarak
 import RPi.GPIO as GPIO
 import pigpio
 
@@ -62,6 +63,8 @@ last_EF = 0b00
 counter1 = 0
 counter2 = 0
 counter3 = 0
+answer1 = "no"
+answer2 = "yes"
 #====================================================
 #=====Set the GPIO Pin mode==========================
 GPIO.setup(Motor1_forwards, GPIO.OUT)
@@ -105,6 +108,17 @@ def StopMotors():
     pi.set_PWM_dutycycle(enable1,0)
     pi.set_PWM_dutycycle(enable2,0)
     pi.set_PWM_dutycycle(enable3,0)
+#=======================================================
+def rotate_once():
+    GPIO.output(Motor1_forwards,1)
+    GPIO.output(Motor1_backwards,Stop)
+    GPIO.output(Motor2_forwards,1)
+    GPIO.output(Motor2_backwards,Stop)
+    GPIO.output(Motor3_forwards,1)
+    GPIO.output(Motor3_backwards,Stop)
+    pi.set_PWM_dutycycle(enable1,45)
+    pi.set_PWM_dutycycle(enable2,45)
+    pi.set_PWM_dutycycle(enable3,45)
 #==========================================
 def stop1():
     global stat1
@@ -151,12 +165,12 @@ def motorb_backwards(d):
 def motorc_forwards(e):
     GPIO.output(Motor3_forwards,1)
     GPIO.output(Motor3_backwards,Stop)
-    pi.set_PWM_dutycycle(enable3,abs(e))
+    pi.set_PWM_dutycycle(enable3,(abs(e)+20))
 
 def motorc_backwards(x):
     GPIO.output(Motor3_forwards,Stop)
     GPIO.output(Motor3_backwards,1)
-    pi.set_PWM_dutycycle(enable3,abs(x))
+    pi.set_PWM_dutycycle(enable3,(abs(x)+20))
 
 #=============================================
 #==========set motor CW or CCW================
@@ -237,31 +251,25 @@ def rpm_needed(data):		#Terima angka RPM hasil Inverse
     setpoint1 = abs(data.mot1)
     setpoint2 = abs(data.mot2)
     setpoint3 = abs(data.mot3)
-
-def rotate_once():		#Rotate sekali untuk scanning ada objek dengan sensor IR
-    GPIO.output(Motor1_forwards,1)
-    GPIO.output(Motor1_backwards,Stop)
-    GPIO.output(Motor2_forwards,1)
-    GPIO.output(Motor2_backwards,Stop)
-    GPIO.output(Motor3_forwards,1)
-    GPIO.output(Motor3_backwards,Stop)
-    pi.set_PWM_dutycycle(enable1,75)
-    pi.set_PWM_dutycycle(enable2,75)
-    pi.set_PWM_dutycycle(enable3,75)
-    time.sleep(3)
+#===================================
+def read_sensor(data):
+    global object_distance
+    object_distance = data.cm
+    if object_distance<40:
+	StopMotors()
 #==========================================================
 def listener():			#Main Program
     error1=0
     error2=0
     error3=0
-    global pwm1,pwm2,pwm3,counter1,counter2,counter3,rpm1,rpm2,rpm3
+    global pwm1,pwm2,pwm3,counter1,counter2,counter3,rpm1,rpm2,rpm3,errsum1,errsum2,errsum3,object_distance
     rospy.init_node('driver')
-    msg = rospy.wait_for_message('pwm',kecepatan,timeout=None) 	#Terima angka PWM (1x)
-    first_vel(msg)					       	#Continue
     put = rospy.wait_for_message('putaran',putaran,timeout=None)#Terima Angka Putaran dibutuhkan (1x)
     rotation_need(put)						#Continue
     need_rpm = rospy.wait_for_message('rpm_need',rpm_need,timeout=None)	#Terima angka RPM (1x)
     rpm_needed(need_rpm)					#Continue
+    msg = rospy.wait_for_message('pwm',kecepatan,timeout=None) 	#Terima angka PWM (1x)
+    first_vel(msg)					       	#Continue
     rospy.Subscriber('counter', counter, pulse_now)		#Terima angka Counter Pulses(Continuosly)
     start = time.time()						#Assign waktu mulai
 #--------------------------------------------------------------------------------    
@@ -270,7 +278,7 @@ def listener():			#Main Program
 	Encode1()			#COunter Pulses tiap motor
 	Encode2()
 	Encode3()
-	if abs(counter1)>=3400 or abs(counter2)>=3400 or abs(counter3)>=3400: #setelah 1x rotation,calculate RPM
+	if abs(counter1)>=1700 or abs(counter2)>=1700 or abs(counter3)>=1700: #setelah 1x rotation,calculate RPM
         	rpm1 = (abs(counter1)/(3400*dur))*60
 		rpm2 = (abs(counter2)/(3400*dur))*60
 		rpm3 = (abs(counter3)/(3400*dur))*60
@@ -280,9 +288,9 @@ def listener():			#Main Program
         	counter3=0
         	start = time.time()
 		#----------Proportional-----------------
-		error1 = (rpm1-abs(setpoint1))*0.2	#Error = RPM skrg - RPM kalkulasi
-		error2 = (rpm2-abs(setpoint2))*0.2	#kp = 0.2
-		error3 = (rpm3-abs(setpoint3))*0.2
+		error1 = (rpm1-abs(setpoint1))*0.7	#Error = RPM skrg - RPM kalkulasi
+		error2 = (rpm2-abs(setpoint2))*0.7	#kp = 0.7
+		error3 = (rpm3-abs(setpoint3))*0.8
        		pwm1 = pwm1-error1	#Hasil PID ditambahkan ke angka pwm
         	pwm2 = pwm2-error2
         	pwm3 = pwm3-error3
@@ -293,11 +301,9 @@ def listener():			#Main Program
 			a=175
 		if b>180:
 			b=175
-		if c>180:
-			c=175	
-        	print("a"+ str(rpm1))
-		print("b" + str(rpm2))
-		print("c"+ str(rpm3))
+		if c>185:
+			c=188	
+		
 		pi.set_PWM_dutycycle(enable1,a)	#Change Duty Cycle
         	pi.set_PWM_dutycycle(enable2,b)
         	pi.set_PWM_dutycycle(enable3,c)
@@ -311,10 +317,12 @@ def listener():			#Main Program
 	if abs(Roda1) >= abs(Putaran1):
 		stop1()
 	if (stat1 == 0) and (stat2 == 0) and (stat3 == 0): #Kalau semua motor sudah stop,
-		#time.sleep(2)	
-		#rotate_once()
+		time.sleep(2)
+		rotate_once()
+		rospy.Subscriber('distance', jarak, read_sensor)
+		time.sleep(3)
 		StopMotors()
-		break
+		#break
 #=====================================================
 if __name__ == '__main__':
     listener()
