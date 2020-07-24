@@ -10,7 +10,7 @@ import sys
 #=================Constant===========================
 R = 0.12 	# Length from Wheel to Center Point (m)
 r = 0.0246 	# Wheel's Radius (m)
-x = 0
+x = 0		#variables
 y = 0		
 degree = 0
 vx = 0
@@ -26,9 +26,9 @@ Theta_d = 0 			# Degree sudut awal robot
 Theta = m.radians(Theta_d)	# Convert to radian
 
 #=======Assign sudut roda awal dengan sumbu x(degree)=====
-a1_d = 270
-a2_d = 30 
-a3_d = 150
+a1_d = 270	#roda1
+a2_d = 30 	#roda2
+a3_d = 150	#roda3
 #=================Convert to radians===================
 a1 = m.radians(a1_d)
 a2 = m.radians(a2_d)
@@ -51,7 +51,7 @@ def ask():
     sec = input("Time (s) : ")
     if sec == 0:
 	sec = input("Time (s) non-zero : ")
-#=======Convert Input to meter and assign them as integer=====
+#=====Convert Input to meter and assign them as integer=====
     x = float(x)/100
     y = float(y)/100
     degree = m.radians(int(degree))
@@ -63,7 +63,7 @@ def ask():
 #======================================================
 def talker():
     global operand1,operand2,operand3,answer
-    pub = rospy.Publisher('putaran',putaran,queue_size=10)	#Send Putaran dibutuhkan tiap motor
+    pub = rospy.Publisher('putaran',putaran,queue_size=10)	#Send Pulsa dibutuhkan tiap motor
     pub2 = rospy.Publisher('pwm',kecepatan,queue_size=10) 	#Send PWM yang diperlukan tiap motor
     pub3 = rospy.Publisher('rpm_need',rpm_need,queue_size=10)	#Send Kecepatan diperlukan tiap motor
     rospy.init_node('odometry_inverse', anonymous=True)
@@ -100,7 +100,7 @@ def talker():
     print("Motor 1: " + str(v1))
     print("Motor 2: " + str(v2))
     print("Motor 3: " + str(v3))
-    if v1>125 or v2>125 or v3>120:
+    if v1>125 or v2>125 or v3>120:	#set maximum RPM for each motor
 	print("================= \n")
 	print("Motor's Maximum Speed: \n")
     	print("Motor 1: 125 RPM")
@@ -114,7 +114,7 @@ def talker():
     rot.mot3 = v3
 #==========Convert RPM to PWM=============================
 #--------------------------------------------------------
-#===========Equation1======================================
+#================Equation1=================================
     if v1>0:
 	v1 = (0.06641*pow(v1/10,4))-(1.5861*pow(v1/10,3))+(0.134*pow(v1,2))-(4.09365*v1) + 52.6128
     if v2>0:
@@ -170,9 +170,9 @@ def talker():
 #========Convert Rad to Pulses================
 # Rads to Rotation = Rad*0.1592
 # Rotation to Pulse  = Rot*3400
-# Constanta = 0.89 Berhenti lebih cepat
+# Constanta = 0.89 penyesuaian agar motor Berhenti lebih cepat
     putar = putaran()
-    putar.deg1 = sudut1_rad*0.1592*3400*0.89
+    putar.deg1 = sudut1_rad*0.1592*3400*0.89	
     putar.deg2 = sudut2_rad*0.1592*3400*0.89
     putar.deg3 = sudut3_rad*0.1592*3400*0.89
 #=========Looping and sending all datas=======
