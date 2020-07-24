@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
+#using MCP3008 as ADC Converter
+
 import spidev 			# To communicate with SPI devices
 from numpy import interp    	# To scale values
 from time import sleep  	# To add delay
 import RPi.GPIO as GPIO
 import rospy
-from omni_bot.msg import jarak
+from omni_bot.msg import jarak	#topic dipublish dalam format ini
 
-spi = spidev.SpiDev() # Created an object
+spi = spidev.SpiDev()
 spi.open(0,0)
 
 #================Read Analog Value===================
@@ -23,7 +25,7 @@ def talker():
     rate = rospy.Rate(10) # 10hz
     kirim = jarak()
     while not rospy.is_shutdown():
- 	output = analogInput(0) 	# Reading from CH0
+ 	output = analogInput(0) 	# Reading value from CH0
 	cm = 12320*pow(output,-1.073)
         if cm > 80:			#set limit to 80 cm
 		cm = 80
