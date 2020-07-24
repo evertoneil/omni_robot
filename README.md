@@ -8,10 +8,10 @@ Omni_bot terdiri dari 1 program launch & 4 Program Node.
 Omni_bot.launch = berisi program untuk menjalankan file driver_node2 , encoder & sensor secara bersamaan.
 
 file *driver_node2* berisi :
-  1.program untuk run & Stop motor
-  2.program untuk mengkalkulasi RPM Motor
-  4.Program PID (optional)
-  4.program 'master' untuk menerima semua value dari program lain
+1.program untuk run & Stop motor
+2.program untuk mengkalkulasi RPM Motor
+3.Program PID (optional)
+4.program 'master' untuk menerima semua value dari program lain
 
 file *encoder.py* berisi :
   program untuk pembacaan encoder sensor dari ketiga motor
