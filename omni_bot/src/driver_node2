@@ -120,6 +120,7 @@ def rotate_once():
     pi.set_PWM_dutycycle(enable2,45)
     pi.set_PWM_dutycycle(enable3,45)
 #==========================================
+#============PROGRAM STOP MOTOR============
 def stop1():
     global stat1
     GPIO.output(Motor1_forwards,Stop)
@@ -141,7 +142,7 @@ def stop3():
     pi.set_PWM_dutycycle(enable3,0)
     stat3 = 0
 #============================================
-#======== Moving motors =====================
+#========= Moving motors =====================
 def motora_forwards(a):
     GPIO.output(Motor1_forwards,1)
     GPIO.output(Motor1_backwards,Stop)
@@ -192,6 +193,7 @@ def calculate_c(x):
     else: 
 	motorc_backwards(x)
 #==================================================
+#=================CALCULATE CURRENT RPM============
 def Encode1():
     global last_AB
     global counter1
@@ -222,6 +224,7 @@ def Encode3():
     counter3 += outcome[position]
     last_EF = current_EF
 #==================================================
+#=========TERIMA HASIL RPM DAN RUN MOTOR==============
 def first_vel(data):
     global DutyCycle1,DutyCycle2,DutyCycle3,pwm1,pwm2,pwm3
     DutyCycle1 = data.v1	#PWM hasil hitung Inverse
@@ -233,26 +236,26 @@ def first_vel(data):
     calculate_a(DutyCycle1)	#Proses angka PWM untuk jalankan motor
     calculate_c(DutyCycle3)
     calculate_b(DutyCycle2)
-
+#========================================================
 def rotation_need(data):	#Terima angka putaran dibutuhkan tiap motor
     global Putaran1,Putaran2,Putaran3
     Putaran2 = data.deg2
     Putaran1 = data.deg1
     Putaran3 = data.deg3
-
+#=============================================================
 def pulse_now(data):		#Terima angka counter Pulse tiap motor
     global Roda1,Roda2,Roda3
     Roda1 = data.enc1
     Roda2 = data.enc2
     Roda3 = data.enc3
-	
+#=================================================================	
 def rpm_needed(data):		#Terima angka RPM hasil Inverse
     global setpoint1,setpoint2,setpoint3
     setpoint1 = abs(data.mot1)
     setpoint2 = abs(data.mot2)
     setpoint3 = abs(data.mot3)
-#===================================
-def read_sensor(data):
+#=============================================================
+def read_sensor(data):		#terima angka pembacaan sensor, stop berputar saat dibawah 40 cm
     global object_distance
     object_distance = data.cm
     if object_distance<40:
@@ -272,7 +275,8 @@ def listener():			#Main Program
     first_vel(msg)					       	#Continue
     rospy.Subscriber('counter', counter, pulse_now)		#Terima angka Counter Pulses(Continuosly)
     start = time.time()						#Assign waktu mulai
-#--------------------------------------------------------------------------------    
+#--------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------
     while not rospy.is_shutdown():
 	dur = time.time()-start 	#Duration waktu (s)
 	Encode1()			#COunter Pulses tiap motor
@@ -303,12 +307,12 @@ def listener():			#Main Program
 			b=175
 		if c>185:
 			c=188	
-		
+		#----------------------------------------
 		pi.set_PWM_dutycycle(enable1,a)	#Change Duty Cycle
         	pi.set_PWM_dutycycle(enable2,b)
         	pi.set_PWM_dutycycle(enable3,c)
 		#-----------------------------------PID END----------------------
-	#Kalau counter pulse sudah melewati angka putaran tiap motor = stop
+	#Kalau counter pulse sudah melewati angka pulsa dibutuhkan tiap motor = stop
 	#----------------------------------
 	if abs(Roda3) >= abs(Putaran3):
 		stop3()
@@ -318,7 +322,7 @@ def listener():			#Main Program
 		stop1()
 	if (stat1 == 0) and (stat2 == 0) and (stat3 == 0): #Kalau semua motor sudah stop,
 		time.sleep(2)
-		rotate_once()
+		rotate_once()	#putar sekali
 		rospy.Subscriber('distance', jarak, read_sensor)
 		time.sleep(3)
 		StopMotors()
